@@ -11,7 +11,8 @@
 
 # 程式如何安裝執行：
 # 程式畫面截圖:
-# 
+# ![image](https://github.com/eric2054/final_project/assets/90565230/2cc84258-fb59-41b7-a2d8-7efc3788a2a2)
+
 # 分工資訊:
 ## 楊宗賢：github編輯，程式編寫,ppt製作
 
