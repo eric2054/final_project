@@ -26,9 +26,10 @@ CardGame::CardGame() {
     }
 }
 
-
 void CardGame::startGame() {
     vector<int> usedCards; // 用來記錄已經出過的牌
+    vector<int> hiddenCards[4]; // 用來記錄每位玩家的蓋牌
+
     for (int count2 = 0; count2 <= 3; count2++) {
         cout << "玩家" << (count2 + 1) << "===";
         for (int count = 1; count <= 13; count++) {
@@ -60,16 +61,48 @@ void CardGame::startGame() {
     while (Desk_Check)
     {
         cout << "玩家" << (player_number + 1) << "===";
+        bool validMove = false;
+
+        // 判斷玩家是否有可以出的牌
         for (int count = 1; count <= 13; count++) {
             int cardIndex = count + player_number * 13;
-            if (find(usedCards.begin(), usedCards.end(), Card[cardIndex]) == usedCards.end()) {
-                cout << count << "." << decode(Card[cardIndex]) << " ";
-            }
-            else {
-                cout << "  ";
+            int cardValue = Card[cardIndex];
+            if (Desk[cardValue] == 0 && find(usedCards.begin(), usedCards.end(), cardValue) == usedCards.end()) {
+                int lowerCard = cardValue - 1;
+                int upperCard = cardValue + 1;
+                if ((lowerCard % 13 != 0 && Desk[lowerCard] == 1) || (upperCard % 13 != 1 && Desk[upperCard] == 1)) {
+                    validMove = true;
+                    break;
+                }
             }
         }
-        cout << "\n 出牌:";
+
+        if (!validMove) {
+            cout << "沒有有效的牌可出, 請選擇一張牌蓋起:\n";
+            for (int count = 1; count <= 13; count++) {
+                int cardIndex = count + player_number * 13;
+                if (find(usedCards.begin(), usedCards.end(), Card[cardIndex]) == usedCards.end()) {
+                    cout << count << "." << decode(Card[cardIndex]) << " ";
+                }
+                else {
+                    cout << "  ";
+                }
+            }
+            cout << "\n 蓋牌:";
+        }
+        else {
+            for (int count = 1; count <= 13; count++) {
+                int cardIndex = count + player_number * 13;
+                if (find(usedCards.begin(), usedCards.end(), Card[cardIndex]) == usedCards.end()) {
+                    cout << count << "." << decode(Card[cardIndex]) << " ";
+                }
+                else {
+                    cout << "  ";
+                }
+            }
+            cout << "\n 出牌:";
+        }
+
         string userInputStr;
         cin >> userInputStr;
         if (userInputStr == "pass") {
@@ -82,42 +115,83 @@ void CardGame::startGame() {
             continue; // 跳到下一位玩家
         }
         user_input = stoi(userInputStr); // 將使用者輸入的字串轉換為整數
-        if (user_input <= 13 && user_input >= 1 && Desk[Card[user_input + player_number * 13]] == 0 && find(usedCards.begin(), usedCards.end(), Card[user_input + player_number * 13]) == usedCards.end()) {
-            Desk[Card[user_input + player_number * 13]] = 1;
-            usedCards.push_back(Card[user_input + player_number * 13]); // 將出過的牌加入到已使用的牌中
-            if (player_number == 3) {
-                player_number = 0;
+
+        if (validMove) {
+            if (user_input <= 13 && user_input >= 1 && Desk[Card[user_input + player_number * 13]] == 0 && find(usedCards.begin(), usedCards.end(), Card[user_input + player_number * 13]) == usedCards.end()) {
+                Desk[Card[user_input + player_number * 13]] = 1;
+                usedCards.push_back(Card[user_input + player_number * 13]); // 將出過的牌加入到已使用的牌中
             }
-            else {
-                player_number = player_number + 1;
+        }
+        else {
+            if (user_input <= 13 && user_input >= 1 && Desk[Card[user_input + player_number * 13]] == 0 && find(usedCards.begin(), usedCards.end(), Card[user_input + player_number * 13]) == usedCards.end()) {
+                hiddenCards[player_number].push_back(Card[user_input + player_number * 13]);
+                usedCards.push_back(Card[user_input + player_number * 13]); // 將蓋起的牌加入到已使用的牌中
             }
         }
 
-        for (int count2 = 0; count2 <= 3; count2++) {
-            cout << "";
-            for (int count = 1; count <= 13; count++) {
-                if (Desk[count + count2 * 13] == 1) {
-                    cout << decode(count + count2 * 13) << "\t";
+        // 顯示目前牌桌的情況
+        cout << "目前牌桌的情況:\n";
+        for (int i = 0; i < 4; i++) {
+            switch (i) {
+            case 0:
+                cout << "梅花: ";
+                break;
+            case 1:
+                cout << "方塊: ";
+                break;
+            case 2:
+                cout << "紅心: ";
+                break;
+            case 3:
+                cout << "黑桃: ";
+                break;
+            }
+            for (int j = 1; j <= 13; j++) {
+                int card = i * 13 + j;
+                if (Desk[card] == 1) {
+                    cout << decode(card) << " ";
                 }
                 else {
-                    cout << " " << "\t";
+                    cout << "[ ] ";
                 }
             }
             cout << "\n";
         }
 
+        if (player_number == 3) {
+            player_number = 0;
+        }
+        else {
+            player_number = player_number + 1;
+        }
+
         Check_RanCardOK = false;
+        Desk_Check = false;
         for (int count = 1; count <= 52; count++) {
-            if (Desk[count] == 0) {
+            if (Desk[count] == 0 && find(usedCards.begin(), usedCards.end(), count) == usedCards.end()) {
                 Desk_Check = true;
                 break;
             }
-            else {
-                Desk_Check = false;
-            }
         }
     }
-    cout << "遊戲結束" << "\n";
+
+    cout << "遊戲結束\n";
+
+    // 計算每位玩家的蓋牌點數
+    int minPoints = INT_MAX;
+    int winner = -1;
+    for (int i = 0; i < 4; i++) {
+        int points = 0;
+        for (int card : hiddenCards[i]) {
+            points += (card % 13 == 0) ? 13 : card % 13; // K為13點
+        }
+        cout << "玩家" << (i + 1) << "的蓋牌點數: " << points << "\n";
+        if (points < minPoints) {
+            minPoints = points;
+            winner = i;
+        }
+    }
+    cout << "玩家" << (winner + 1) << "獲勝, 蓋牌點數最少\n";
 }
 
 string CardGame::decode(int number) {
